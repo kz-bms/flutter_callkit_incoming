@@ -62,6 +62,10 @@ public class SwiftFlutterCallkitIncomingPlugin: NSObject, FlutterPlugin, CXProvi
         let instance = sharePluginWithRegister(with: registrar)
         registrar.addMethodCallDelegate(instance, channel: instance.channel!)
     }
+
+    deinit {
+        sharedProvider?.invalidate()
+    }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
@@ -391,6 +395,12 @@ public class SwiftFlutterCallkitIncomingPlugin: NSObject, FlutterPlugin, CXProvi
             action.fail()
             return
         }
+
+        /* Set the delegate to null after call end from call kit package so that CXProviderDelegate does not conflict with the one in SwiftTwilioVoicePlugin. */
+        self.sharedProvider?.setDelegate(nil, queue: nil)
+        self.sharedProvider?.invalidate()
+        self.sharedProvider = nil
+
         call.endCall()
         self.callManager?.removeCall(call)
         if (self.answerCall == nil && self.outgoingCall == nil) {
